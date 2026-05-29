@@ -1,35 +1,51 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BFD Brisbane 26 Check-In</title>
+<title>BFD26 Brisbane Check-In</title>
 
 <style>
-body { 
-    font-family: Arial; 
-    text-align: center; 
-    margin-top: 50px; 
-    background:#f9f9f9; 
+body{
+    font-family: Arial, sans-serif;
+    text-align:center;
+    margin-top:50px;
+    background:#f9f9f9;
 }
 
-.logo { 
-    max-width:150px; 
-    margin-bottom:20px; 
+.logo{
+    max-width:180px;
+    margin-bottom:20px;
 }
 
-input, button { 
-    padding:10px; 
-    margin:10px; 
-    width:220px; 
-    border-radius:5px; 
+input,
+button{
+    padding:12px;
+    margin:10px;
+    width:240px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    font-size:16px;
 }
 
-button { 
-    background:#3498db; 
-    color:white; 
-    border:none; 
-    cursor:pointer; 
+button{
+    background:#3498db;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+#paused{
+    padding:40px;
+}
+
+#status{
+    margin-top:15px;
 }
 </style>
 </head>
@@ -39,77 +55,115 @@ button {
 <div id="paused" style="display:none;"></div>
 
 <div id="app">
-  <img class="logo" src="https://242329549.fs1.hubspotusercontent-na2.net/hubfs/242329549/crm-properties-file-values/BFD26%20FINAL%20Logo.png">
 
-  <h1>BFD26 Brisbane Check-In</h1>
-  <h2 id="eventTitle">May 30, 2026</h2>
+    <img
+        class="logo"
+        src="https://242329549.fs1.hubspotusercontent-na2.net/hubfs/242329549/crm-properties-file-values/BFD26%20FINAL%20Logo.png"
+        alt="BFD26 Logo"
+    >
 
-  <form id="form">
-    <input type="text" id="fname" placeholder="First Name" required>
-    <input type="text" id="lname" placeholder="Last Name" required><br>
-    <button type="submit">Continue</button>
-  </form>
+    <h1>BFD26 Brisbane Check-In</h1>
+    <h2>May 30, 2026</h2>
 
-  <p id="status"></p>
+    <form id="form">
+
+        <input
+            type="text"
+            id="fname"
+            placeholder="First Name"
+            required
+        >
+
+        <input
+            type="text"
+            id="lname"
+            placeholder="Last Name"
+            required
+        >
+
+        <br>
+
+        <button type="submit">
+            Continue
+        </button>
+
+    </form>
+
+    <p id="status"></p>
+
 </div>
 
 <script>
-// =======================
-// CONFIG
-// =======================
-const webhookURL = "https://hook.eu1.make.com/pdz3obto9me2epspeq6iyq3yfjh5o1ou";
 
-// =======================
-// SINGLE EVENT (EDIT ONLY THIS)
-// =======================
+// ======================================
+// CONFIG
+// ======================================
+
+const webhookURL = "https://hook.eu1.make.com/dspa2fhez2mfqyttv84fdb6hf6gejz4q";
+
 const event = {
     day: 1,
     date: "2026-05-30",
-    start: { hour: 7, minute: 0 },
-    end: { hour: 14, minute: 0 }
+    startHour: 7,
+    endHour: 14
 };
 
-// =======================
-// BRISBANE TIME HELPERS
-// =======================
+// ======================================
+// DATE / TIME HELPERS
+// ======================================
+
 function getBrisbaneNow(){
+
     return new Date(
-        new Date().toLocaleString("en-US", { 
-            timeZone: "Australia/Brisbane" 
-        })
+        new Date().toLocaleString(
+            "en-US",
+            { timeZone: "Australia/Brisbane" }
+        )
     );
+
 }
 
-function getBrisbaneDateString(d){
-    return d.toLocaleDateString("en-CA", { 
-        timeZone: "Australia/Brisbane" 
-    });
+function getTodayString(date){
+
+    return date.toLocaleDateString(
+        "en-CA",
+        { timeZone: "Australia/Brisbane" }
+    );
+
 }
 
-function getMinutes(d){
-    return d.getHours()*60 + d.getMinutes();
+function getMinutes(date){
+
+    return (date.getHours() * 60) + date.getMinutes();
+
 }
 
 function formatDate(dateStr){
-    return new Date(dateStr).toLocaleDateString("en-AU", {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-    });
+
+    const [year, month, day] = dateStr.split("-");
+
+    return new Date(year, month - 1, day)
+        .toLocaleDateString("en-AU", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+
 }
 
-function formatTime(mins){
-    const h = Math.floor(mins/60);
-    const m = mins%60;
-    const ampm = h>=12 ? "PM":"AM";
-    const h12 = h%12 || 12;
+function formatTime(hour){
 
-    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const h12 = hour % 12 || 12;
+
+    return `${h12}:00 ${suffix}`;
+
 }
 
-// =======================
+// ======================================
 // ACCESS CONTROL
-// =======================
+// ======================================
+
 function checkAccess(){
 
     const app = document.getElementById("app");
@@ -118,90 +172,152 @@ function checkAccess(){
     app.style.display = "none";
     paused.style.display = "none";
 
-    const br = getBrisbaneNow();
-    const today = getBrisbaneDateString(br);
-    const nowMinutes = getMinutes(br);
+    const now = getBrisbaneNow();
 
-    // check if event matches today
+    const today = getTodayString(now);
+
+    const currentMinutes = getMinutes(now);
+
+    const startMinutes = event.startHour * 60;
+    const endMinutes = event.endHour * 60;
+
+    // Wrong date
     if(today !== event.date){
-        block(
-            `Check-in will be available on ${formatDate(event.date)} from ${formatTime(event.start.hour*60+event.start.minute)} - ${formatTime(event.end.hour*60+event.end.minute)} (Brisbane Time).`
+
+        blockScreen(
+            `Check-in will be available on ${formatDate(event.date)} from ${formatTime(event.startHour)} to ${formatTime(event.endHour)} Brisbane time.`
         );
+
         return;
     }
 
-    const start = event.start.hour*60 + event.start.minute;
-    const end = event.end.hour*60 + event.end.minute;
+    // Outside check-in window
+    if(
+        currentMinutes < startMinutes ||
+        currentMinutes >= endMinutes
+    ){
 
-    if(nowMinutes >= start && nowMinutes < end){
-        app.style.display = "block";
-    } else {
-        block(
-            `Available on ${formatDate(event.date)}, ${formatTime(start)} - ${formatTime(end)} (Brisbane Time).`
+        blockScreen(
+            `Check-in is available from ${formatTime(event.startHour)} to ${formatTime(event.endHour)} Brisbane time.`
         );
+
+        return;
     }
+
+    // Allowed
+    app.style.display = "block";
+
 }
 
-// =======================
-// BLOCK UI
-// =======================
-function block(msg){
-    document.getElementById("app").style.display = "none";
+function blockScreen(message){
 
-    const p = document.getElementById("paused");
+    const paused = document.getElementById("paused");
 
-    p.style.display = "block";
+    paused.style.display = "block";
 
-    p.innerHTML = `
+    paused.innerHTML = `
         <h1>We’re currently between sessions.</h1>
+
         <h3>We’ll be ready to greet you soon!</h3>
-        <p>${msg}</p>
+
+        <p>${message}</p>
     `;
+
 }
 
-// =======================
-// FORM SUBMIT (UTC)
-// =======================
-document.getElementById("form").addEventListener("submit", e=>{
+// ======================================
+// FORM SUBMIT
+// ======================================
+
+document
+    .getElementById("form")
+    .addEventListener("submit", async (e)=>{
+
     e.preventDefault();
 
-    const fname = document.getElementById("fname").value.trim();
-    const lname = document.getElementById("lname").value.trim();
+    const fname = document
+        .getElementById("fname")
+        .value
+        .trim();
+
+    const lname = document
+        .getElementById("lname")
+        .value
+        .trim();
 
     if(!fname || !lname){
-        alert("Enter name");
+
+        alert("Please enter your name.");
+
         return;
     }
 
-    document.getElementById("status").textContent = "Submitting...";
+    document.getElementById("status")
+        .textContent = "Submitting...";
 
-    fetch(webhookURL,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-            fname,
-            lname,
-            day: event.day,
-            action: "check-in",
-            timestamp: new Date().toISOString()
-        })
-    })
-    .then(()=>{
+    try{
+
+        const response = await fetch(
+            webhookURL,
+            {
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json"
+                },
+
+                body: JSON.stringify({
+
+                    fname,
+                    lname,
+
+                    day: event.day,
+
+                    action: "check-in",
+
+                    timestamp_utc: new Date().toISOString()
+
+                })
+            }
+        );
+
+        if(!response.ok){
+            throw new Error("Webhook failed");
+        }
+
         document.body.innerHTML = `
-            <h1>Check-In Complete</h1>
-            <p>Thank you ${fname} ${lname}!</p>
+            <div style="margin-top:80px;">
+                <h1>Check-In Complete</h1>
+
+                <p>
+                    Thank you
+                    <strong>${fname} ${lname}</strong>!
+                </p>
+            </div>
         `;
-    })
-    .catch(()=>{
-        alert("Error. Try again.");
-        document.getElementById("status").textContent = "";
-    });
+
+    }catch(error){
+
+        console.error(error);
+
+        alert("Something went wrong. Please try again.");
+
+        document.getElementById("status")
+            .textContent = "";
+    }
+
 });
 
-// =======================
+// ======================================
+// START
+// ======================================
+
 checkAccess();
+
 setInterval(checkAccess, 30000);
+
 </script>
 
 </body>
 </html>
+```
